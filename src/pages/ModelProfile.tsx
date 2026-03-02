@@ -1250,7 +1250,7 @@ export default function ModelProfile() {
           </div>
 
           <div className="profile-cta-row">
-            <button className="profile-btn-primary">Đặt lịch ngay</button>
+            <button className="profile-btn-primary" onClick={() => window.open('https://t.me/hoahong8388', '_blank')}>Đặt lịch ngay</button>
           </div>
         </div>
       </section>
