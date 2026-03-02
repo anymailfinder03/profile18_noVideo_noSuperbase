@@ -593,6 +593,7 @@ nav.scrolled {
   gap: 1.2rem;
   padding: 0 0 1rem 0;
   overflow-x: auto;
+  overflow-y: hidden;
   scroll-behavior: smooth;
   scrollbar-width: none;
   user-select: none;
@@ -600,6 +601,7 @@ nav.scrolled {
   will-change: scroll-position;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
+  scroll-snap-type: x mandatory;
 }
 
 .carousel-track::-webkit-scrollbar {
@@ -634,18 +636,20 @@ nav.scrolled {
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  will-change: transform;
-  transform: translateZ(0);
+  will-change: transform, box-shadow;
+  transform: translate3d(0, 0, 0);
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
   perspective: 1000px;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  transition: border-color 0.2s ease, box-shadow 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .model-card:hover {
   border-color: var(--pink-main);
-  transform: translateY(-4px) translateZ(0);
+  transform: translate3d(0, -4px, 0);
   box-shadow: 0 12px 32px rgba(232, 116, 138, 0.15);
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 

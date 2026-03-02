@@ -146,11 +146,15 @@ export default function CitySection({ id, cityLabel, cityName, cityNameItalic, c
     const applyMomentum = () => {
       stopAnimation();
 
-      const friction = 0.92;
-      let velocity = dragStateRef.current.velocity * 0.8;
+      const friction = 0.95;
+      let velocity = dragStateRef.current.velocity;
+      let lastFrameTime = performance.now();
 
-      const animate = () => {
-        if (Math.abs(velocity) < 0.1) {
+      const animate = (currentTime: number) => {
+        const deltaTime = Math.min(currentTime - lastFrameTime, 16.67);
+        lastFrameTime = currentTime;
+
+        if (Math.abs(velocity) < 0.5) {
           dragStateRef.current.velocity = 0;
           return;
         }
@@ -160,7 +164,7 @@ export default function CitySection({ id, cityLabel, cityName, cityNameItalic, c
         dragStateRef.current.animationId = requestAnimationFrame(animate);
       };
 
-      if (Math.abs(velocity) > 0.1) {
+      if (Math.abs(velocity) > 0.5) {
         dragStateRef.current.animationId = requestAnimationFrame(animate);
       }
     };
@@ -185,8 +189,12 @@ export default function CitySection({ id, cityLabel, cityName, cityNameItalic, c
       track.style.scrollBehavior = 'auto';
     };
 
+    let moveTimeout: number | null = null;
+
     const handleMove = (e: MouseEvent | TouchEvent) => {
       if (!dragStateRef.current.isDown) return;
+
+      if (moveTimeout) clearTimeout(moveTimeout);
 
       const clientX = getClientX(e);
       const now = performance.now();
@@ -235,11 +243,11 @@ export default function CitySection({ id, cityLabel, cityName, cityNameItalic, c
     track.addEventListener('mousedown', handleStart as EventListener);
     track.addEventListener('touchstart', handleStart as EventListener, { passive: true });
 
-    window.addEventListener('mousemove', handleMove as EventListener);
-    window.addEventListener('touchmove', handleMove as EventListener, { passive: false });
+    track.addEventListener('mousemove', handleMove as EventListener);
+    track.addEventListener('touchmove', handleMove as EventListener, { passive: false });
 
-    window.addEventListener('mouseup', handleEnd);
-    window.addEventListener('touchend', handleEnd);
+    document.addEventListener('mouseup', handleEnd);
+    document.addEventListener('touchend', handleEnd);
 
     track.addEventListener('mouseleave', handleEnd);
 
@@ -248,12 +256,13 @@ export default function CitySection({ id, cityLabel, cityName, cityNameItalic, c
 
     return () => {
       stopAnimation();
+      if (moveTimeout) clearTimeout(moveTimeout);
       track.removeEventListener('mousedown', handleStart as EventListener);
       track.removeEventListener('touchstart', handleStart as EventListener);
-      window.removeEventListener('mousemove', handleMove as EventListener);
-      window.removeEventListener('touchmove', handleMove as EventListener);
-      window.removeEventListener('mouseup', handleEnd);
-      window.removeEventListener('touchend', handleEnd);
+      track.removeEventListener('mousemove', handleMove as EventListener);
+      track.removeEventListener('touchmove', handleMove as EventListener);
+      document.removeEventListener('mouseup', handleEnd);
+      document.removeEventListener('touchend', handleEnd);
       track.removeEventListener('mouseleave', handleEnd);
     };
   }, [cityKey]);
