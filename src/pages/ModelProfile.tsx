@@ -1041,7 +1041,6 @@ const cityModels: Record<string, Record<string, ModelData>> = {
 export default function ModelProfile() {
   const [model, setModel] = useState<ModelData | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [currentVideoSlide, setCurrentVideoSlide] = useState(0);
   const [city, setCity] = useState<string | null>(null);
   const [modelName, setModelName] = useState<string | null>(null);
 
@@ -1063,135 +1062,6 @@ export default function ModelProfile() {
     }
   }, []);
 
-  useEffect(() => {
-    const videoSlider = document.getElementById('video-slider');
-    if (!videoSlider) return;
-
-    let isDragging = false;
-    let startX = 0;
-    let scrollLeft = 0;
-    let velocity = 0;
-    let lastX = 0;
-    let lastTime = 0;
-    let animationId: number | null = null;
-    let hasMoved = false;
-
-    const stopAnimation = () => {
-      if (animationId !== null) {
-        cancelAnimationFrame(animationId);
-        animationId = null;
-      }
-    };
-
-    const applyMomentum = () => {
-      stopAnimation();
-      const friction = 0.92;
-      let vel = velocity * 0.8;
-
-      const animate = () => {
-        if (Math.abs(vel) < 0.1) {
-          velocity = 0;
-          const slideWidth = videoSlider.offsetWidth;
-          const targetSlide = Math.round(-parseInt(videoSlider.style.transform.replace(/[^0-9-]/g, '') || '0') / slideWidth);
-          const clampedSlide = Math.max(0, Math.min(targetSlide, totalVideoSlides - 1));
-          setCurrentVideoSlide(clampedSlide);
-          return;
-        }
-
-        vel *= friction;
-        const currentTransform = parseInt(videoSlider.style.transform.replace(/[^0-9-]/g, '') || '0');
-        const newTransform = currentTransform + vel;
-        videoSlider.style.transform = `translateX(${newTransform}px)`;
-
-        animationId = requestAnimationFrame(animate);
-      };
-
-      if (Math.abs(vel) > 0.1) {
-        animationId = requestAnimationFrame(animate);
-      }
-    };
-
-    const getClientX = (e: MouseEvent | TouchEvent) => {
-      return 'touches' in e ? e.touches[0].clientX : e.clientX;
-    };
-
-    const handleStart = (e: MouseEvent | TouchEvent) => {
-      stopAnimation();
-      isDragging = true;
-      hasMoved = false;
-      velocity = 0;
-
-      const clientX = getClientX(e);
-      startX = clientX;
-      lastX = clientX;
-      scrollLeft = parseInt(videoSlider.style.transform.replace(/[^0-9-]/g, '') || '0');
-      lastTime = performance.now();
-
-      videoSlider.style.cursor = 'grabbing';
-      videoSlider.style.transition = 'none';
-    };
-
-    const handleMove = (e: MouseEvent | TouchEvent) => {
-      if (!isDragging) return;
-
-      const clientX = getClientX(e);
-      const now = performance.now();
-      const deltaTime = Math.max(now - lastTime, 1);
-      const deltaX = clientX - lastX;
-
-      if (Math.abs(clientX - startX) > 3) {
-        hasMoved = true;
-        if (e.cancelable) {
-          e.preventDefault();
-        }
-      }
-
-      velocity = (deltaX / deltaTime) * 10;
-      lastX = clientX;
-      lastTime = now;
-
-      const walk = clientX - startX;
-      const newTransform = scrollLeft + walk;
-      const maxTransform = -(videoSlider.offsetWidth * (totalVideoSlides - 1));
-      const clampedTransform = Math.max(maxTransform, Math.min(0, newTransform));
-
-      videoSlider.style.transform = `translateX(${clampedTransform}px)`;
-    };
-
-    const handleEnd = () => {
-      if (!isDragging) return;
-      isDragging = false;
-      videoSlider.style.cursor = 'grab';
-
-      if (hasMoved) {
-        applyMomentum();
-      }
-    };
-
-    videoSlider.addEventListener('mousedown', handleStart);
-    videoSlider.addEventListener('touchstart', handleStart, { passive: true });
-
-    window.addEventListener('mousemove', handleMove);
-    window.addEventListener('touchmove', handleMove, { passive: false });
-
-    window.addEventListener('mouseup', handleEnd);
-    window.addEventListener('touchend', handleEnd);
-
-    videoSlider.addEventListener('mouseleave', handleEnd);
-
-    videoSlider.style.cursor = 'grab';
-
-    return () => {
-      stopAnimation();
-      videoSlider.removeEventListener('mousedown', handleStart);
-      videoSlider.removeEventListener('touchstart', handleStart);
-      window.removeEventListener('mousemove', handleMove);
-      window.removeEventListener('touchmove', handleMove);
-      window.removeEventListener('mouseup', handleEnd);
-      window.removeEventListener('touchend', handleEnd);
-      videoSlider.removeEventListener('mouseleave', handleEnd);
-    };
-  }, []);
 
   if (!model) {
     return (
@@ -1215,19 +1085,6 @@ export default function ModelProfile() {
     setCurrentSlide(index);
   };
 
-  const totalVideoSlides = 4;
-
-  const handlePrevVideoSlide = () => {
-    setCurrentVideoSlide((prev) => (prev - 1 + totalVideoSlides) % totalVideoSlides);
-  };
-
-  const handleNextVideoSlide = () => {
-    setCurrentVideoSlide((prev) => (prev + 1) % totalVideoSlides);
-  };
-
-  const goToVideoSlide = (index: number) => {
-    setCurrentVideoSlide(index);
-  };
 
   const getOtherModels = () => {
     if (!city) return [];
@@ -1394,73 +1251,6 @@ export default function ModelProfile() {
 
           <div className="profile-cta-row">
             <button className="profile-btn-primary">Đặt lịch ngay</button>
-          </div>
-        </div>
-      </section>
-
-      <section className="profile-section">
-        <div className="profile-section-header">
-          <h2 className="profile-section-title">Video <em>Giới thiệu</em></h2>
-          <div className="profile-section-line" />
-        </div>
-
-        <div className="profile-video-slider-wrap">
-          <div
-            id="video-slider"
-            className="profile-video-slider"
-            style={{ transform: `translateX(-${currentVideoSlide * 100}%)` }}
-          >
-            {[
-              { videoUrl: 'https://res.cloudinary.com/dechikoa8/video/upload/vc_h264/v1772443477/fbec8bc7a198525909d0aa6a0f27c229_q7gm4q.mp4' },
-              { videoUrl: 'https://res.cloudinary.com/dechikoa8/video/upload/vc_h264/v1772443470/b3212c8cfaee5a7dee344d52a625c595_sfmr9s.mp4' },
-              { videoUrl: 'https://res.cloudinary.com/dechikoa8/video/upload/vc_h264/v1772443541/0228_qhria3.mp4'},
-              { videoUrl: 'https://res.cloudinary.com/dechikoa8/video/upload/vc_h264/v1772443504/0228_1_yrq5go.mp4'},
-              {}
-            ].map((video, idx) => (
-              <div key={idx} className="profile-video-slide">
-                {video.videoUrl ? (
-                  <div className="profile-video-placeholder-16-9">
-                    <video
-                      controls
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        display: 'block'
-                      }}
-                    >
-                      <source src={video.videoUrl} type="video/mp4" />
-                      Your browser does not support the video tag.
-                    </video>
-                  </div>
-                ) : (
-                  <div className="profile-video-placeholder-16-9">
-                    <div className="profile-video-play">&#9654;</div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          <button className="profile-video-btn profile-video-prev" onClick={handlePrevVideoSlide}>
-            <ChevronLeft size={20} />
-          </button>
-          <button className="profile-video-btn profile-video-next" onClick={handleNextVideoSlide}>
-            <ChevronRight size={20} />
-          </button>
-
-          <div className="profile-video-dots">
-            {[0, 1, 2, 3, 4].map((index) => (
-              <div
-                key={index}
-                className={`profile-video-dot ${currentVideoSlide === index ? 'active' : ''}`}
-                onClick={() => goToVideoSlide(index)}
-              />
-            ))}
-          </div>
-
-          <div className="profile-video-count">
-            {String(currentVideoSlide + 1).padStart(2, '0')} / {String(totalVideoSlides).padStart(2, '0')}
           </div>
         </div>
       </section>
